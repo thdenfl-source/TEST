@@ -2,828 +2,117 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KUH-1CG CDU - Scaled Up (1.37x) & Smart Input Logic</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Gear v2.3 - Final</title>
     <style>
-        :root {
-            --bg-dark: #050505;
-            --text-green: #c8ff00; 
-            --text-cyan: #00ffff;
-            --active-blue: #87ceeb;
-            --btn-grad: linear-gradient(to bottom, #444, #111, #000);
-            --border-3d: 1px solid #444;
+        body {
+            margin: 0; padding: 0;
+            background-color: #0b0d17;
+            color: #ffffff;
+            font-family: "Malgun Gothic", sans-serif;
+            display: flex; flex-direction: column; align-items: center; 
         }
-
-        body { 
-            background-color: #222;
-            display: flex; justify-content: center; align-items: center; 
-            min-height: 100vh; margin: 0; font-family: 'Arial', sans-serif; color: white; 
-            user-select: none; touch-action: manipulation;
-            padding: 30px 0;
-            overflow: auto; 
+        .main-wrapper { width: 70%; min-width: 300px; background-color: #0b0d17; padding-bottom: 50px; }
+        header {
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1506012733851-00f465985532?q=80&w=500');
+            background-size: cover; background-position: center;
+            padding: 12px 15px; display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 2px solid #ff4d4d;
         }
-
-        .cdu-frame { 
-            width: 354px;
-            height: 567px; 
-            background-color: #111; padding: 8px; border-radius: 12px; border: 3px solid #000; 
-            display: flex; flex-direction: column;
-            box-shadow: 0 13px 33px rgba(0,0,0,0.9);
-            transform: scale(1.37);
-            transform-origin: center; 
-            flex-shrink: 0;
-        }
+        header .title { font-size: 18px; font-weight: bold; }
+        header .version { font-size: 11px; text-align: right; color: #ccc; }
+        .section-header { color: #fce98a; font-size: 14px; font-weight: bold; padding: 12px 10px 5px 15px; }
         
-        .touch-display { background-color: var(--bg-dark);
-            flex: 1; display: flex; flex-direction: column; border: 1.5px solid #000; overflow: hidden;
-        }
-
-        /* Header (CNS Bar) */
-        .header-grid { display: grid;
-            grid-template-columns: 0.9fr 1.2fr 0.8fr 1.2fr 0.8fr; background: #111; padding: 4px; gap: 3px; border-bottom: 1.5px solid #333; height: 63px;
-        }
-        .header-box { background: #0a0a0a; border: 0.7px solid #444; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; position: relative; overflow: hidden; }
-        .header-label { font-size: 6px; color: #888; text-align: center; width: 100%; pointer-events: none; }
-        .freq-act { color: white; font-size: 11px; font-weight: bold; }
-        .freq-stby { color: var(--text-cyan); font-size: 10px; font-weight: bold; }
-        .swap-arrow { font-size: 10px; color: #777; cursor: pointer; padding: 2px; z-index: 10;}
-        .green-ind { color: var(--text-green); font-size: 8px; font-weight: bold; text-align: center; line-height: 1.1; }
-
-        /* Titles and Sub-headers */
-        .mode-title-bar { background: linear-gradient(to bottom, #555, #111);
-            text-align: center; padding: 3px; font-size: 9px; font-weight: bold; border-bottom: 1px solid #000; color: #eee;
-        }
-        .sub-header { display: flex; align-items: flex-end; padding: 4px 7px 0 7px;
-            gap: 5px; background: #1a1a1a; }
-        .user-3d-btn { height: 37px; background: var(--btn-grad);
-            border: var(--border-3d); border-radius: 4px 4px 0 0; font-size: 7px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 0 5px;
-        }
+        .button-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 0 10px; }
+        .triple-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; padding: 2px 10px; }
         
-        .tab-container { display: flex; flex: 1; gap: 3px; }
-        .tab { flex: 1; height: 30px; background: #2c2c2c; border: 0.7px solid #444;
-            border-radius: 4px 4px 0 0; display: flex; align-items: center; justify-content: center; font-size: 7px; cursor: pointer; color: #aaa;
+        .btn {
+            background-color: #0c0c3a; color: white !important; text-decoration: none !important;
+            text-align: center; border-radius: 6px;
+            font-size: 13px; font-weight: bold; display: flex;
+            align-items: center; justify-content: center; min-height: 42px;
+            border: 1px solid #1e293b;
+            /* 터치 시 즉각 반응하도록 설정 */
+            -webkit-tap-highlight-color: transparent; 
+            transition: background-color 0.05s ease, transform 0.05s ease;
         }
-        .tab.active { background: #eee; color: black; font-weight: bold; height: 32px; margin-top: -2px; }
 
-        /* Main Content */
-        #mainContentArea { flex: 1; display: flex; flex-direction: column; padding: 7px; overflow-y: auto; }
-        .panel-border { flex: 1; border: 1.5px solid var(--active-blue); border-radius: 5px; padding: 8px; background: black; display: flex; flex-direction: column; }
-
-        /* Common Buttons */
-        .item-btn { height: 35px; background: var(--btn-grad); border: var(--border-3d);
-            color: white; font-size: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; border-radius: 4px; position: relative; text-align: center;
+        /* 💡 누를 때 즉시 오렌지색(보색)으로 반전! */
+        .btn:active { 
+            background-color: #fca311 !important; 
+            color: #0b0d17 !important;           
+            transform: scale(0.96);
+            border-color: #ffffff;
         }
-        .status-line { position: absolute; bottom: 3px; width: 70%; height: 2px; background: #333; border-radius: 1.5px; }
-        .on .status-line { background: var(--text-green); box-shadow: 0 0 3px var(--text-green); }
 
-        /* Sliders */
-        .volume-row { display: grid; grid-template-columns: 50px 43px 1fr 63px; align-items: center; margin-bottom: 7px; gap: 5px; }
-        .wedge-slider { height: 28px; background: #111; border: 0.7px solid #444; position: relative; overflow: hidden; cursor: ew-resize; border-radius: 3px; }
-        .wedge-fill { height: 100%; background: linear-gradient(to right, #1a3a4a, #00d2ff); clip-path: polygon(0% 100%, 100% 0%, 100% 100%); pointer-events: none; }
-        .wedge-text { position: absolute; left: 7px; top: 8px; font-size: 8px; color: var(--active-blue); font-weight: bold; z-index: 3; pointer-events: none; }
+        .btn-red { background-color: #c85341; }
+        .btn-kakao { background-color: #f1e05a; color: #3c1e1e !important; }
+        .btn-naver { background-color: #3eaf3f; }
+        .btn-google { background-color: #6a73cf; }
 
-        /* Audio Radios */
-        .freq-display-box { height: 35px; background: #0a0a0a; border: 0.7px solid #444; display: flex; flex-direction: column; justify-content: center; align-items: flex-end; padding-right: 5px; border-radius: 4px; cursor: pointer; }
-
-        /* Intercom Grid */
-        .intercom-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 5px; }
-        .loop-row { display: flex; gap: 8px; margin-top: 10px; }
-
-        /* Numpad */
-        .input-row { display: flex; align-items: center; justify-content: center; gap: 7px; margin: 10px 0 20px 0; }
-        .freq-box-main { width: 120px; height: 40px; background: #000; border: 1.5px solid #555; border-radius: 4px; color: var(--text-green); font-size: 22px; display: flex; align-items: center; justify-content: center; font-family: monospace; }
-        .numpad-grid { display: grid; grid-template-columns: repeat(3, 60px); gap: 10px; justify-content: center; }
-        .xpdr-numpad-grid { display: grid; grid-template-columns: repeat(4, 55px); gap: 10px; justify-content: center; margin-bottom: 15px;}
-        .num-circle { width: 50px; height: 50px; background: radial-gradient(circle at 30% 30%, #444, #111); border: 0.7px solid #555; border-radius: 50%; color: white; font-size: 18px; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 3px 5px rgba(0,0,0,0.6); }
-
-        /* Footer */
-        .footer-nav { height: 53px; display: flex; justify-content: space-around; align-items: center; background: #111; border-top: 1.5px solid #333; padding: 0 5px; }
-        .nav-btn { background: var(--btn-grad); border: var(--border-3d); border-radius: 5px; padding: 6px; min-width: 45px; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; font-size: 7px; color: white; }
-        .nav-btn span { font-size: 14px; pointer-events: none; }
-        .enter-btn-blue { background: #1a2a4a; border: 1px solid var(--active-blue); }
-
-        .status-footer { height: 25px; background: #111; display: grid; grid-template-columns: 1fr 1.5fr 1fr; border-top: 0.7px solid #333; font-size: 6px; color: #ccc; align-items: center; padding: 0 7px; text-align: center; }
-        
-        /* 4-Column Home Grid (Flex-wrap for 4-4-4-3 layout) */
-        .home-grid { 
-            display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start;
-            gap: 15px 5px; padding: 5px; 
+        /* 하단 특수 색상 버튼들 누를 때 피드백 */
+        .btn-red:active, .btn-kakao:active, .btn-naver:active, .btn-google:active {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            transform: scale(0.96);
         }
-        .home-icon-wrapper {
-            width: 23%; display: flex; flex-direction: column; align-items: center; cursor: pointer;
-        }
-        .icon-box { 
-            width: 45px; height: 45px; background: linear-gradient(to bottom, #444, #1a1a1a); 
-            border-radius: 8px; border: 1px solid #555; display: flex; align-items: center; 
-            justify-content: center; margin-bottom: 5px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.6);
-        }
-        .icon-box svg { width: 70%; height: 70%; }
-        .icon-label { font-size: 8px; color: #eee; text-align: center; font-weight: bold; line-height: 1.1; pointer-events: none; }
     </style>
 </head>
-<body>
+<body ontouchstart="">
 
-<div class="cdu-frame">
-    <div class="touch-display">
-        
-        <div class="header-grid">
-            <div class="header-box" style="padding:0; gap:0;">
-                <div style="flex:1; width:100%; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="switchMode('AUDIO'); switchAudioTab('COM');">
-                    <div class="header-label" style="line-height:1.2;">Audio &<br>Radios</div>
-                </div>
-                <div style="width:80%; height:1px; background:#333;"></div>
-                <div style="flex:1; width:100%; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="switchMode('INTERCOM')">
-                    <div class="header-label">Intercom</div>
-                </div>
-            </div>
+    <div class="main-wrapper">
+        <header>
+            <div class="title">Flight Gear.</div>
+            <div class="version">ver.2.3<br>Song Doo Ri</div>
+        </header>
 
-            <div class="header-box">
-                <div class="header-label">COM1</div>
-                <div class="freq-act" id="h-com1-act">133.30</div>
-                <div class="swap-arrow" onclick="swapFreq('com1')">↕</div>
-                <div class="freq-stby" id="h-com1-stb">121.90</div>
-            </div>
-            
-            <div class="header-box">
-                <div class="header-label" style="margin-bottom:2px;">MIC</div>
-                <div class="green-ind" id="top-mic-val">COM1</div>
-                <div class="header-label" style="margin-top:2px; margin-bottom:2px;">MON</div>
-                <div class="green-ind" id="top-mon-val">1/2</div>
-            </div>
-            
-            <div class="header-box">
-                <div class="header-label">COM2</div>
-                <div class="freq-act" id="h-com2-act">128.20</div>
-                <div class="swap-arrow" onclick="swapFreq('com2')">↕</div>
-                <div class="freq-stby" id="h-com2-stb">118.20</div>
-            </div>
-            
-            <div class="header-box" style="padding:0; gap:0;">
-                <div style="flex:1; width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;" onclick="switchMode('XPDR_MODE')">
-                    <div class="header-label" style="color:var(--text-cyan); margin-bottom:1px;">XPDR2</div>
-                    <div class="green-ind" id="top-xpdr-mode">AUTO</div>
-                </div>
-                <div style="width:80%; height:1px; background:#333;"></div>
-                <div style="flex:1; width:100%; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="switchMode('XPDR_CODE')">
-                    <div class="freq-act" id="top-xpdr-code" style="color:var(--text-green); font-size:12px;">1234</div>
-                </div>
-            </div>
+        <div class="section-header">하늘 정보</div>
+        <div class="button-grid">
+            <a href="https://www.windy.com" target="_blank" rel="noopener noreferrer" class="btn">Windy</a>
+            <a href="https://aim.koca.go.kr/xNotam/index.do?type=search2&language=ko_KR" target="_blank" rel="noopener noreferrer" class="btn">NOTAM</a>
+            <a href="https://skyvector.com/" target="_blank" rel="noopener noreferrer" class="btn">Sky Vector</a>
+            <a href="https://www.aviationweather.gov/" target="_blank" rel="noopener noreferrer" class="btn">METAR / TAF</a>
+            <a href="https://www.weather.go.kr/w/index.do" target="_blank" rel="noopener noreferrer" class="btn">날씨누리</a>
+            <a href="https://lamis.koca.go.kr/main.do" target="_blank" rel="noopener noreferrer" class="btn">LAMIS(저고도)</a>
         </div>
 
-        <div class="mode-title-bar" id="modeTitle">Home</div>
-        <div id="mainContentArea"></div>
-        <div class="footer-nav" id="footerNav"></div>
-        
-        <div class="status-footer">
-            <div style="text-align:left;">- Range +<br>Push:Pan</div>
-            <div id="center-label">CDU HOME</div>
-            <div style="text-align:right;">COM1 FREQ<br>Hold:↕</div>
+        <div class="section-header">바다 정보</div>
+        <div class="button-grid">
+            <a href="http://www.khoa.go.kr/swi/main.do" target="_blank" rel="noopener noreferrer" class="btn">스마트 조석예보</a>
+            <a href="https://vessel.mof.go.kr" target="_blank" rel="noopener noreferrer" class="btn">Vessels DATA</a>
+            <a href="https://astro.kasi.re.kr/life/pageView/5" target="_blank" rel="noopener noreferrer" class="btn">해, 달, 월광정보</a>
+            <a href="https://www.khoa.go.kr/oceanmap" target="_blank" rel="noopener noreferrer" class="btn">해양공간 종합지도</a>
+        </div>
+
+        <div class="section-header">항공관련 웹사이트</div>
+        <div class="button-grid">
+            <a href="https://www.araib.go.kr" target="_blank" rel="noopener noreferrer" class="btn">항공사고조사</a>
+            <a href="https://www.kotsa.or.kr" target="_blank" rel="noopener noreferrer" class="btn">교통안전공단</a>
+            <a href="http://www.airsafety.or.kr" target="_blank" rel="noopener noreferrer" class="btn">항공자율보고</a>
+            <a href="https://www.ubikais.go.kr" target="_blank" rel="noopener noreferrer" class="btn">UBIKAIS</a>
+        </div>
+
+        <div class="section-header">CCTV</div>
+        <div class="button-grid">
+            <a href="https://www.its.go.kr/visual/cctv" target="_blank" rel="noopener noreferrer" class="btn">울릉도, 독도</a>
+            <a href="https://www.knps.or.kr/portal/main/contents/search/cctv.do" target="_blank" rel="noopener noreferrer" class="btn">한라산</a>
+            <a href="https://weather.kma.go.kr/w/special/cctv.do" target="_blank" rel="noopener noreferrer" class="btn">국립공원</a>
+            <a href="http://www.khoa.go.kr/pcctv" target="_blank" rel="noopener noreferrer" class="btn">항구(바다날씨)</a>
+        </div>
+
+        <div class="section-header">유관기관 참고 웹사이트</div>
+        <div class="triple-grid">
+            <a href="https://m.map.kakao.com" target="_blank" rel="noopener noreferrer" class="btn btn-red">위치기반</a>
+            <a href="https://www.forest.go.kr/kfsweb/kfs/subIdx/Index.do" target="_blank" rel="noopener noreferrer" class="btn btn-red">실시간산불</a>
+            <a href="https://www.e-gen.or.kr/egen/main.do" target="_blank" rel="noopener noreferrer" class="btn btn-red">실시간응급</a>
+        </div>
+
+        <div class="section-header">위치 정보</div>
+        <div class="triple-grid">
+            <a href="https://map.kakao.com" target="_blank" rel="noopener noreferrer" class="btn btn-kakao">KAKAO</a>
+            <a href="https://map.naver.com" target="_blank" rel="noopener noreferrer" class="btn btn-naver">NAVER</a>
+            <a href="https://www.google.co.kr/maps" target="_blank" rel="noopener noreferrer" class="btn btn-google">Google</a>
         </div>
     </div>
-</div>
-
-<script>
-    // --- State Variables ---
-    let currentMode = 'HOME';
-    let audioTab = 'COM'; 
-    let inputTarget = 'com1';
-    
-    // Numpad 입력 상태 관리 (타이핑 시작 여부)
-    let currentInput = "";
-    let xpdrInput = "";
-    let hasStartedTyping = false; 
-    
-    // Audio State
-    let micSelected = 'COM1'; 
-    let monStates = { 
-        com1: true, com2: true, uvhf: false, vhffm: true, hf: false, selcal: false,
-        nav1: true, nav2: true, speaker: true 
-    };
-    let clicksState = 'Off'; 
-    
-    // Intercom State
-    let icStates = { 
-        CoPilot: true, Pilot: true, Crew1: true, Pass: true, Crew2: true, wICS: true, 
-        Isolate: false, Loop1: false, Loop2: false, Loop5: false 
-    };
-    let voxState = 'Off';
-    let volumes = { 
-        com1: 100, com2: 75, uvhf: 90, pb: 100, intercom: 100, 
-        vhffm: 100, hf: 100, clicks: 100, nav1: 100, nav2: 100, speaker: 100 
-    };
-    
-    // Frequencies, XPDR & HF States
-    let freqs = { 
-        com1: { act: "124.380", stb: "129.990" }, 
-        com2: { act: "119.340", stb: "132.110" }, 
-        uvhf: { act: "115.000", stb: "110.000" },
-        hf: { act: "7.5423", stb: "11.4570" },
-        nav1: { act: "117.80", stb: "113.00", id: "TOP" },
-        nav2: { act: "115.50", stb: "113.25", id: "STJ" }
-    };
-    
-    let xpdrState = { mode: 'Auto', code: '1234', active: 'XPDR2', adsb: true, flightId: 'TERRY' };
-    let hfState = { tuning: 'Simplex', emission: 'LSB V', sql: 'SQ3', pwr: 'High' };
-
-    // --- High-fidelity SVG Icons for Home Screen ---
-    const homeButtons = [
-        { id: 'mapSettings', text: 'Map<br>Settings', icon: '<svg viewBox="0 0 100 100"><rect x="15" y="25" width="70" height="50" fill="#4caf50" rx="3"/><path d="M30 75 L50 25 L70 75" fill="#81c784"/><circle cx="50" cy="50" r="15" fill="none" stroke="#fff" stroke-width="4"/><line x1="20" y1="20" x2="45" y2="45" stroke="#ccc" stroke-width="8" stroke-linecap="round"/></svg>' },
-        { id: 'traffic', text: 'Traffic', icon: '<svg viewBox="0 0 100 100"><polygon points="30,30 40,50 20,50" fill="#0ff"/><polygon points="70,50 80,70 60,70" fill="#fff"/><line x1="30" y1="20" x2="30" y2="10" stroke="#0ff" stroke-width="4"/><polygon points="25,15 30,5 35,15" fill="#0ff"/><line x1="70" y1="80" x2="70" y2="90" stroke="#fff" stroke-width="4"/><polygon points="65,85 70,95 75,85" fill="#fff"/></svg>' },
-        { id: 'connextWeather', text: 'Connext<br>Weather', icon: '<svg viewBox="0 0 100 100"><circle cx="40" cy="40" r="20" fill="#ffeb3b"/><circle cx="65" cy="50" r="15" fill="#fff"/><circle cx="45" cy="55" r="15" fill="#fff"/><circle cx="80" cy="55" r="15" fill="#fff"/><rect x="45" y="40" width="35" height="30" fill="#fff" rx="10"/><path d="M60 65 L45 85 L55 85 L50 100" stroke="#f44336" stroke-width="4" fill="none"/></svg>' },
-        { id: 'terrainProximity', text: 'Terrain<br>Proximity', icon: '<svg viewBox="0 0 100 100"><polygon points="10,90 50,20 90,90" fill="#4caf50"/><polygon points="30,55 50,20 70,55" fill="#ffeb3b"/><polygon points="40,37 50,20 60,37" fill="#f44336"/></svg>' },
-        
-        { id: 'directTo', text: 'Direct To', icon: '<svg viewBox="0 0 100 100"><path d="M35 20 L35 80 C70 80, 85 65, 85 50 C85 35, 70 20, 35 20 Z" fill="none" stroke="#fff" stroke-width="10"/><line x1="10" y1="50" x2="90" y2="50" stroke="#fff" stroke-width="8"/><polygon points="70,35 95,50 70,65" fill="#fff"/></svg>' },
-        { id: 'flightPlan', text: 'Flight Plan', icon: '<svg viewBox="0 0 100 100"><path d="M20 80 L50 50 L80 80" fill="none" stroke="#fff" stroke-width="4"/><circle cx="20" cy="80" r="5" fill="#0ff"/><circle cx="50" cy="50" r="5" fill="#0ff"/><circle cx="80" cy="80" r="5" fill="#0ff"/><polygon points="50,20 65,45 35,45" fill="#fff"/></svg>' },
-        { id: 'proc', text: 'PROC', icon: '<svg viewBox="0 0 100 100"><path d="M20 80 C 40 20, 80 20, 80 50" fill="none" stroke="#fff" stroke-width="6"/><polygon points="70,40 80,55 90,40" fill="#fff"/><rect x="75" y="60" width="10" height="30" fill="#f0f"/></svg>' },
-        { id: 'charts', text: 'Charts', icon: '<svg viewBox="0 0 100 100"><rect x="25" y="15" width="50" height="70" fill="none" stroke="#fff" stroke-width="6" rx="5"/><line x1="15" y1="30" x2="35" y2="30" stroke="#ccc" stroke-width="4"/><line x1="15" y1="50" x2="35" y2="50" stroke="#ccc" stroke-width="4"/><line x1="15" y1="70" x2="35" y2="70" stroke="#ccc" stroke-width="4"/><circle cx="50" cy="45" r="10" fill="#0ff"/></svg>' },
-        
-        { id: 'aircraftSystems', text: 'Aircraft<br>Systems', icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="45" r="22" fill="none" stroke="#ccc" stroke-width="8" stroke-dasharray="12, 6"/><circle cx="50" cy="45" r="10" fill="#0ff"/><text x="50" y="90" font-size="18" text-anchor="middle" fill="#fff" font-weight="bold">Audio</text></svg>' },
-        { id: 'checklist', text: 'Checklist', icon: '<svg viewBox="0 0 100 100"><rect x="25" y="15" width="50" height="70" fill="none" stroke="#fff" stroke-width="6" rx="3"/><line x1="35" y1="35" x2="65" y2="35" stroke="#fff" stroke-width="4"/><line x1="35" y1="55" x2="65" y2="55" stroke="#fff" stroke-width="4"/><line x1="35" y1="75" x2="65" y2="75" stroke="#fff" stroke-width="4"/><polyline points="15,45 30,60 60,10" fill="none" stroke="#0ff" stroke-width="8"/></svg>' },
-        { id: 'services', text: 'Services', icon: '<svg viewBox="0 0 100 100"><path d="M30 50 C30 20, 70 20, 70 50" fill="none" stroke="#fff" stroke-width="8"/><rect x="25" y="50" width="10" height="20" fill="#0ff" rx="4"/><rect x="65" y="50" width="10" height="20" fill="#0ff" rx="4"/><path d="M70 70 C70 85, 45 85, 45 75" fill="none" stroke="#fff" stroke-width="6"/></svg>' },
-        { id: 'utilities', text: 'Utilities', icon: '<svg viewBox="0 0 100 100"><line x1="20" y1="80" x2="70" y2="30" stroke="#ccc" stroke-width="8" stroke-linecap="round"/><circle cx="70" cy="30" r="12" fill="none" stroke="#ccc" stroke-width="6"/><line x1="20" y1="20" x2="80" y2="80" stroke="#ffeb3b" stroke-width="6"/><polygon points="20,20 30,10 40,20" fill="#ffeb3b"/></svg>' },
-        
-        { id: 'perf', text: 'PERF', icon: '<svg viewBox="0 0 100 100"><line x1="20" y1="10" x2="20" y2="80" stroke="#fff" stroke-width="4"/><line x1="20" y1="80" x2="90" y2="80" stroke="#fff" stroke-width="4"/><rect x="30" y="50" width="15" height="30" fill="#f0f"/><rect x="55" y="25" width="15" height="55" fill="#0ff"/></svg>' },
-        { id: 'waypointInfo', text: 'Waypoint<br>Info', icon: '<svg viewBox="0 0 100 100"><polygon points="50,15 85,35 85,75 50,95 15,75 15,35" fill="none" stroke="#0ff" stroke-width="6"/><circle cx="50" cy="55" r="10" fill="#f0f"/></svg>' },
-        { id: 'nearest', text: 'Nearest', icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="8" fill="#fff"/><line x1="20" y1="20" x2="40" y2="40" stroke="#f0f" stroke-width="6"/><polygon points="30,40 45,45 40,30" fill="#f0f"/><line x1="80" y1="20" x2="60" y2="40" stroke="#f0f" stroke-width="6"/><polygon points="70,40 55,45 60,30" fill="#f0f"/><line x1="20" y1="80" x2="40" y2="60" stroke="#f0f" stroke-width="6"/><polygon points="30,60 45,55 40,70" fill="#f0f"/><line x1="80" y1="80" x2="60" y2="60" stroke="#f0f" stroke-width="6"/><polygon points="70,60 55,55 60,70" fill="#f0f"/></svg>' }
-    ];
-
-    // --- Core Functions ---
-    function switchMode(mode, target = 'com1') {
-        currentMode = mode;
-        inputTarget = target;
-        
-        // 탭이 COM으로 강제 초기화되는 오작동을 해결하기 위해 강제 리셋 로직 삭제
-        // (대신 Audio 탭을 띄우는 홈 화면이나, 좌측 상단 버튼에 직접 switchAudioTab('COM')을 부여해 우선순위 해결)
-        
-        if(mode === 'COM_INPUT') {
-            currentInput = freqs[inputTarget].stb.replace(/\./g, '');
-            hasStartedTyping = false; 
-        }
-        if(mode === 'XPDR_CODE') {
-            xpdrInput = xpdrState.code;
-            hasStartedTyping = false;
-        }
-        
-        renderContent();
-    }
-
-    function switchAudioTab(tab) {
-        audioTab = tab;
-        renderContent();
-    }
-
-    function toggleClicks() {
-        clicksState = clicksState === 'Off' ? 'On' : 'Off';
-        renderContent();
-    }
-
-    function renderContent() {
-        const container = document.getElementById('mainContentArea');
-        const footer = document.getElementById('footerNav');
-        const title = document.getElementById('modeTitle');
-        const centerLabel = document.getElementById('center-label');
-        container.innerHTML = '';
-
-        if (currentMode === 'HOME') {
-            title.innerText = "Home";
-            centerLabel.innerText = "CDU HOME";
-            
-            let gridHtml = `<div class="home-grid">`;
-            homeButtons.forEach(btn => {
-                let clickAction = btn.id === 'aircraftSystems' ? `onclick="switchMode('AUDIO'); switchAudioTab('COM');"` : '';
-                gridHtml += `
-                    <div class="home-icon-wrapper" ${clickAction}>
-                        <div class="icon-box">${btn.icon}</div>
-                        <div class="icon-label">${btn.text}</div>
-                    </div>`;
-            });
-            gridHtml += `</div>`;
-            container.innerHTML = gridHtml;
-            
-            footer.innerHTML = `<div class="nav-btn"><span>✔️</span>INIT</div><div class="nav-btn" onclick="switchMode('HOME')"><span>🏠</span>Home</div><div class="nav-btn"><span>✉</span>Msg</div><div class="nav-btn" onclick="switchMode('AUDIO'); switchAudioTab('COM');"><span>✥</span>Full</div>`;
-        } 
-        else if (currentMode === 'AUDIO') {
-            title.innerText = "Audio & Radios";
-            centerLabel.innerText = `CoPilot ${audioTab === 'Mission' ? 'VHF-FM' : (audioTab === 'Other' ? 'PA' : inputTarget.toUpperCase())} Volume`;
-            
-            let audioContent = '';
-
-            if (audioTab === 'COM') {
-                audioContent = `
-                    <div style="display:flex; justify-content:space-between; font-size:7px; color:#888; margin-bottom:5px; padding: 0 60px 0 100px;">
-                        <span>Volume</span><span>Control</span>
-                    </div>
-                    ${renderAudioRow('COM1', 'com1')} 
-                    ${renderAudioRow('COM2', 'com2')} 
-                    ${renderAudioRow('U/VHF', 'uvhf')}
-                    <div class="volume-row">
-                        <div class="item-btn">▶<br>Playback</div>
-                        <div class="wedge-slider" style="grid-column: span 2;" onpointerdown="handleVol('pb', event)">
-                            <span class="wedge-text">${volumes.pb}%</span>
-                            <div class="wedge-fill" style="width:${volumes.pb}%"></div>
-                        </div>
-                        <div style="display:flex; gap:3px;">
-                            <button class="item-btn" style="width:30px; height:35px;">|◀</button>
-                            <button class="item-btn" style="width:30px; height:35px;">▶|</button>
-                        </div>
-                    </div>
-                `;
-            } 
-            else if (audioTab === 'NAV') {
-                audioContent = `
-                    <div style="display:flex; justify-content:space-between; font-size:7px; color:#ccc; margin-bottom:4px; padding: 0 70px 0 80px;">
-                        <span>Volume</span><span>Control</span>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 60px 1fr 80px; align-items: center; margin-bottom: 7px; gap: 6px;">
-                        <div class="item-btn ${monStates.speaker?'on':''}" onclick="toggleMon('speaker')">Speaker<div class="status-line"></div></div>
-                        <div class="wedge-slider" onpointerdown="handleVol('speaker', event)">
-                            <span class="wedge-text">${volumes.speaker}%</span>
-                            <div class="wedge-fill" style="width:${volumes.speaker}%"></div>
-                        </div>
-                        <div></div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 60px 1fr 80px; align-items: center; margin-bottom: 7px; gap: 6px;">
-                        <div class="item-btn">▶<br>Playback</div>
-                        <div class="wedge-slider" onpointerdown="handleVol('pb', event)">
-                            <span class="wedge-text">${volumes.pb}%</span>
-                            <div class="wedge-fill" style="width:${volumes.pb}%"></div>
-                        </div>
-                        <div style="display:flex; gap:4px;">
-                            <button class="item-btn" style="flex:1; height:35px; font-size:9px;">|◀◀</button>
-                            <button class="item-btn" style="flex:1; height:35px; font-size:9px;">▶▶|</button>
-                        </div>
-                    </div>
-                    ${renderNavRow('NAV1', 'nav1')}
-                    ${renderNavRow('NAV2', 'nav2')}
-                `;
-            }
-            else if (audioTab === 'Mission') {
-                audioContent = `
-                    <div style="margin-bottom: 6px;">
-                        <div style="display:flex; justify-content:space-between; font-size:7px; color:#ccc; margin-bottom:4px; padding: 0 45px 0 130px;">
-                            <span>Volume</span><span>Control</span>
-                        </div>
-                        ${renderMissionRow('VHF-FM', 'vhffm')}
-                    </div>
-                    <div style="margin-bottom: 6px;">
-                        ${renderMissionRow('HF', 'hf')}
-                    </div>
-                    <div class="volume-row">
-                        <div class="item-btn ${monStates.selcal?'on':''}" onclick="toggleMon('selcal')">SELCAL<div class="status-line"></div></div>
-                        <div></div>
-                        <div></div>
-                        <div class="freq-display-box" style="align-items:center; justify-content:center;">
-                            <div style="color:white; font-size:7px; margin-bottom:2px;">SELCAL ID</div>
-                            <div style="color:var(--text-cyan); font-size:11px; font-weight:bold;">BCAJ</div>
-                        </div>
-                    </div>
-                `;
-            } 
-            else if (audioTab === 'Other') {
-                audioContent = `
-                    <div style="display:flex; justify-content:space-between; font-size:7px; color:#ccc; margin-bottom:4px; padding: 0 50px 0 130px;">
-                        <span>Volume</span><span>Control</span>
-                    </div>
-                    
-                    <div style="display: flex; gap: 8px; margin-bottom: 8px; padding-left: 5px;">
-                        <div class="item-btn" style="width: 65px; height: 35px;" onclick="toggleClicks()">
-                            <span style="font-size: 9px; color: white;">Clicks</span>
-                            <span style="font-size: 10px; color: var(--text-cyan); font-weight: bold; margin-top: 2px;">${clicksState}</span>
-                        </div>
-                        <div class="wedge-slider" style="width: 140px; height: 30px; align-self: center;" onpointerdown="handleVol('clicks', event)">
-                            <span class="wedge-text">${volumes.clicks}%</span>
-                            <div class="wedge-fill" style="width:${volumes.clicks}%"></div>
-                        </div>
-                    </div>
-
-                    <div style="display: flex; gap: 8px; padding-left: 5px;">
-                        <div class="item-btn ${micSelected === 'PA' ? 'on' : ''}" style="width: 65px; height: 35px;" onclick="setMic('PA')">
-                            <span style="font-size: 9px;">PA</span>
-                            <div class="status-line"></div>
-                        </div>
-                        <div style="flex: 1; background: black; border: 0.7px solid #444; border-radius: 4px; height: 35px;"></div>
-                    </div>
-                `;
-            }
-
-            container.innerHTML = `
-                <div class="sub-header">
-                    <div class="user-3d-btn" style="width:57px;">User<br><span style="color:var(--text-cyan)">Pilot</span></div>
-                    <div class="tab-container">
-                        <div class="tab ${audioTab==='COM'?'active':''}" onclick="switchAudioTab('COM')">COM</div>
-                        <div class="tab ${audioTab==='NAV'?'active':''}" onclick="switchAudioTab('NAV')">NAV</div>
-                        <div class="tab ${audioTab==='Mission'?'active':''}" onclick="switchAudioTab('Mission')">Mission</div>
-                        <div class="tab ${audioTab==='Other'?'active':''}" onclick="switchAudioTab('Other')">Other</div>
-                    </div>
-                </div>
-                <div class="panel-border">
-                    ${audioContent}
-                </div>`;
-            footer.innerHTML = `<div class="nav-btn" onclick="switchMode('HOME')"><span>↩</span>Back</div><div class="nav-btn" onclick="switchMode('HOME')"><span>🏠</span>Home</div><div class="nav-btn"><span>✉</span>Msg</div><div class="nav-btn" style="color:var(--active-blue)"><span>✥</span>Half</div><div class="nav-btn"><span>▲</span>Up</div><div class="nav-btn"><span>▼</span>Down</div>`;
-        }
-        else if (currentMode === 'INTERCOM') {
-            title.innerText = "Intercom";
-            centerLabel.innerText = "CoPilot ICS Volume";
-            container.innerHTML = `
-                <div class="sub-header" style="justify-content: space-between; padding-bottom:5px;">
-                    <div class="user-3d-btn" style="width:60px;">User<br><span style="color:var(--text-cyan)">CoPilot</span></div>
-                    <div class="wedge-slider" style="flex:1; margin:0 8px;" onpointerdown="handleVol('intercom', event)">
-                        <span class="wedge-text">${volumes.intercom}%</span>
-                        <div class="wedge-fill" style="width:${volumes.intercom}%"></div>
-                    </div>
-                    <div class="item-btn ${icStates.Isolate?'on':''}" style="width:45px; height:37px;" onclick="toggleIsolate()">Isolate<div class="status-line"></div></div>
-                    <div class="item-btn" style="width:40px; height:37px;">VOX<br><span style="color:var(--text-cyan)">${voxState}</span></div>
-                </div>
-                <div class="panel-border" style="padding-top:12px;">
-                    <div class="intercom-grid">
-                        <div class="item-btn ${icStates.CoPilot?'on':''}" style="height:60px;" onclick="toggleIC('CoPilot')">👨‍✈️<br>CoPilot<div class="status-line"></div></div>
-                        <div class="item-btn ${icStates.Pilot?'on':''}" style="height:60px;" onclick="toggleIC('Pilot')">Pilot<div class="status-line"></div></div>
-                        <div class="item-btn ${icStates.Crew1?'on':''}" style="height:60px;" onclick="toggleIC('Crew1')">Crew 1<div class="status-line"></div></div>
-                        <div class="item-btn ${icStates.Pass?'on':''}" style="height:60px;" onclick="toggleIC('Pass')">Pass<div class="status-line"></div></div>
-                        <div class="item-btn ${icStates.Crew2?'on':''}" style="height:60px;" onclick="toggleIC('Crew2')">Crew 2<div class="status-line"></div></div>
-                        <div class="item-btn ${icStates.wICS?'on':''}" style="height:60px;" onclick="toggleIC('wICS')">wICS<div class="status-line"></div></div>
-                    </div>
-                    <div class="loop-row">
-                        <div class="item-btn ${icStates.Loop1?'on':''}" style="flex:1; height:45px;" onclick="toggleIC('Loop1')">Loop 1<br>Mission Crew<div class="status-line"></div></div>
-                        <div class="item-btn ${icStates.Loop2?'on':''}" style="flex:1; height:45px;" onclick="toggleIC('Loop2')">Loop 2<br>All Pass<div class="status-line"></div></div>
-                        <div class="item-btn ${icStates.Loop5?'on':''}" style="flex:1; height:45px;" onclick="toggleIC('Loop5')">Loop 5<br>All<div class="status-line"></div></div>
-                    </div>
-                </div>`;
-            footer.innerHTML = `<div class="nav-btn" onclick="switchMode('HOME')"><span>↩</span>Back</div><div class="nav-btn" onclick="switchMode('HOME')"><span>🏠</span>Home</div><div class="nav-btn"><span>✉</span>Msg</div><div class="nav-btn"><span>✥</span>Half</div>`;
-        }
-        else if (currentMode === 'HF_CONTROL') {
-            title.innerText = "HF";
-            centerLabel.innerText = "CoPilot HF1 Volume";
-            container.innerHTML = `
-                <div style="display:flex; flex-direction:column; gap:12px; height:100%; padding-top:5px;">
-                    
-                    <div style="border: 1px solid var(--text-cyan); border-radius: 5px; background: #050505; display: flex; flex-direction: column; margin-bottom: 5px; padding: 5px;">
-                        <div style="position: relative; height: 45px; display: flex; justify-content: center; align-items: center;">
-                            <div style="position: absolute; top: 0; left: 5px; font-size: 9px; color: white;">Active</div>
-                            <div style="position: absolute; bottom: 0; left: 20px; font-size: 10px; color: white; font-weight: bold;">${hfState.emission}</div>
-                            <div style="font-size: 24px; color: white; font-weight: bold;">${freqs.hf.act}</div>
-                        </div>
-
-                        <div style="position: relative; height: 15px; display: flex; justify-content: center; align-items: center;">
-                            <div style="width: 100%; height: 1px; background: #555; position: absolute;"></div>
-                            <div style="background: #050505; padding: 0 5px; z-index: 1; color: #555; font-size: 10px;">▼</div>
-                        </div>
-
-                        <div style="position: relative; height: 50px; display: flex; justify-content: center; align-items: center;">
-                            <div style="position: absolute; top: -5px; left: 5px; font-size: 9px; color: white;">Standby</div>
-                            <div class="item-btn" style="width: 130px; height: 35px; border: 1px solid var(--text-cyan); background: transparent; color: var(--text-cyan); font-size: 18px; font-weight: bold; cursor: pointer;" onclick="switchMode('COM_INPUT', 'hf')">
-                                ${freqs.hf.stb}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style="display: flex; gap: 10px; margin-bottom: 2px;">
-                        <div class="item-btn" style="flex: 1; height: 45px;" onclick="toggleHfTuning()">
-                            <div style="font-size: 9px; color: white; margin-bottom: 3px;">Tuning Mode</div>
-                            <div style="font-size: 12px; color: var(--text-cyan); font-weight: bold;">${hfState.tuning}</div>
-                        </div>
-                        <div class="item-btn" style="flex: 1; height: 45px;" onclick="toggleHfEmission()">
-                            <div style="font-size: 9px; color: white; margin-bottom: 3px;">Emission Mode</div>
-                            <div style="font-size: 12px; color: var(--text-cyan); font-weight: bold;">${hfState.emission}</div>
-                        </div>
-                    </div>
-
-                    <div style="display: flex; gap: 8px;">
-                        <div class="item-btn" style="width: 45px; height: 45px;">
-                            <div style="font-size: 16px; margin-bottom: 2px;">🔍</div>
-                            <div style="font-size: 8px; color: white;">Find</div>
-                        </div>
-                        <div class="item-btn" style="flex: 1; height: 45px;" onclick="toggleHfSql()">
-                            <div style="font-size: 9px; color: white; margin-bottom: 3px;">SQL LVL</div>
-                            <div style="font-size: 12px; color: var(--text-cyan); font-weight: bold;">${hfState.sql}</div>
-                        </div>
-                        <div class="item-btn" style="flex: 1; height: 45px;" onclick="toggleHfPwr()">
-                            <div style="font-size: 9px; color: white; margin-bottom: 3px;">XMIT PWR</div>
-                            <div style="font-size: 12px; color: var(--text-cyan); font-weight: bold;">${hfState.pwr}</div>
-                        </div>
-                        <div class="item-btn" style="width: 55px; height: 45px;" onclick="swapFreq('hf')">
-                            <div style="font-size: 12px; color: white; font-weight: bold;">↕ XFER</div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            footer.innerHTML = `<div class="nav-btn" onclick="switchMode('AUDIO')"><span>↩</span>Back</div><div class="nav-btn" onclick="switchMode('HOME')"><span>🏠</span>Home</div><div class="nav-btn"><span>✉</span>Msg</div><div class="nav-btn" style="color:var(--active-blue)"><span>✥</span>Half</div>`;
-        }
-        else if (currentMode === 'COM_INPUT') {
-            title.innerText = `${inputTarget.toUpperCase()} Standby`;
-            
-            let displayStr = currentInput;
-            if (hasStartedTyping) {
-                if (inputTarget === 'hf' && displayStr.length > 2 && !displayStr.includes('.')) {
-                    displayStr = displayStr.slice(0, 2) + '.' + displayStr.slice(2);
-                } 
-                else if (inputTarget !== 'hf' && displayStr.length > 3 && !displayStr.includes('.')) {
-                    displayStr = displayStr.slice(0, 3) + '.' + displayStr.slice(3);
-                }
-            }
-            
-            let displayVal = !hasStartedTyping ? freqs[inputTarget].stb : displayStr;
-            let activeFreqHtml = '';
-            
-            if (inputTarget.startsWith('nav')) {
-                activeFreqHtml = `
-                    <div style="text-align:center; color:white; font-size:10px; font-weight:bold; margin-bottom:2px;">${inputTarget.toUpperCase()}</div>
-                    <div style="text-align:center; color:white; font-size:11px; margin-bottom:10px;">
-                        Active Freq: <span style="color:var(--text-green); font-weight:bold;">${freqs[inputTarget].act}</span>
-                    </div>
-                `;
-            }
-
-            container.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; padding-top:10px;">
-                ${activeFreqHtml}
-                <div class="input-row" style="margin-top:0;">
-                    <div class="item-btn" style="width:45px; height:45px;">🔍<br>Find</div>
-                    <div class="freq-box-main">${displayVal}</div>
-                    <div class="item-btn" style="width:45px; height:45px;" onclick="backspaceInput()">⬅<br>Bksp</div>
-                </div>
-                <div class="numpad-grid">
-                    ${[1,2,3,4,5,6,7,8,9].map(n => `<div class="num-circle" onclick="addInput('${n}')">${n}</div>`).join('')}
-                    <div></div><div class="num-circle" onclick="addInput('0')">0</div>
-                    <div class="item-btn" style="height:50px; font-size:12px;" onclick="handleInputXfer()">↕ XFER</div>
-                </div></div>`;
-            
-            let backMode = inputTarget === 'hf' ? "'HF_CONTROL'" : "'AUDIO'";
-            footer.innerHTML = `<div class="nav-btn" onclick="switchMode(${backMode}, '${inputTarget}')"><span>↩</span>Back</div><div class="nav-btn" onclick="switchMode('HOME')"><span>🏠</span>Home</div><div class="nav-btn"><span>✉</span>Msg</div><div class="nav-btn"><span>✥</span>Full</div><div class="nav-btn enter-btn-blue" onclick="confirmInput()"><span>↩</span>Enter</div>`;
-        }
-        else if (currentMode === 'XPDR_MODE') {
-            title.innerText = "Transponder";
-            centerLabel.innerText = "Transponder Mode";
-            container.innerHTML = `
-                <div style="display:flex; height:100%; padding-top:5px;">
-                    <div style="flex:1; display:flex; flex-direction:column; gap:6px; border-right:1px solid #333; padding-right:10px;">
-                        <div style="color:white; font-size:10px; padding-bottom:3px; border-bottom:1px solid #555;">XPDR/TCAS Mode</div>
-                        ${['Auto', 'TA Only', 'Altitude Reporting', 'On', 'Standby'].map(m => 
-                            `<div class="item-btn ${xpdrState.mode === m ? 'on' : ''}" style="height:35px; font-size:9px;" onclick="setXpdrMode('${m}')">
-                                ${m.replace(' ', '<br>')}<div class="status-line"></div>
-                            </div>`
-                        ).join('')}
-                    </div>
-                    <div style="flex:1; display:flex; flex-direction:column; gap:15px; padding-left:10px; justify-content:flex-start; padding-top:20px;">
-                        <div class="item-btn" style="height:45px; font-size:10px;">Active<br><span style="color:var(--text-cyan); font-size:11px;">${xpdrState.active}</span></div>
-                        <div class="item-btn ${xpdrState.adsb ? 'on' : ''}" style="height:45px; font-size:10px;" onclick="toggleAdsb()">ADS-B TX<div class="status-line"></div></div>
-                        <div class="item-btn" style="height:45px; font-size:10px;">Flight ID<br><span style="color:var(--text-cyan); font-size:11px;">${xpdrState.flightId}</span></div>
-                    </div>
-                </div>
-            `;
-            footer.innerHTML = `<div class="nav-btn" onclick="switchMode('HOME')"><span>↩</span>Back</div><div class="nav-btn" onclick="switchMode('HOME')"><span>🏠</span>Home</div><div class="nav-btn"><span>✉</span>Msg</div><div class="nav-btn"><span>✥</span>Full</div>`;
-        }
-        else if (currentMode === 'XPDR_CODE') {
-            title.innerText = "Transponder 2";
-            centerLabel.innerText = "Data Entry";
-            let displayVal = !hasStartedTyping ? xpdrState.code : xpdrInput;
-            container.innerHTML = `
-                <div style="display:flex; flex-direction:column; align-items:center; padding-top:10px; height:100%;">
-                    <div style="display:flex; gap:10px; margin-bottom:20px; align-items:center; width:100%; justify-content:center;">
-                        <div style="background:#0a0a0a; border:1px solid #444; width:120px; height:35px; display:flex; align-items:center; justify-content:center; color:var(--text-cyan); font-size:20px; font-weight:bold; border-radius:4px;">${displayVal}</div>
-                        <div class="item-btn" style="width:45px; height:35px;" onclick="backspaceXpdr()">←<br>BKSP</div>
-                    </div>
-                    <div class="xpdr-numpad-grid">
-                        ${[0,1,2,3,4,5,6,7].map(n => `<div class="num-circle" style="width:45px; height:45px;" onclick="addXpdrInput('${n}')">${n}</div>`).join('')}
-                    </div>
-                    <div style="display:flex; gap:10px; width:100%; justify-content:center; margin-top:10px;">
-                        <div class="item-btn" style="flex:1; height:35px; font-size:10px;" onclick="flashIdent()">IDENT</div>
-                        <div class="item-btn" style="flex:1; height:35px; font-size:10px;" onclick="setXpdrPreset('1200')">VFR</div>
-                        <div class="item-btn" style="flex:1; height:35px; font-size:10px;" onclick="setXpdrPreset('7700')">EMER</div>
-                    </div>
-                </div>
-            `;
-            footer.innerHTML = `<div class="nav-btn" onclick="switchMode('XPDR_MODE')"><span>↩</span>Back</div><div class="nav-btn" onclick="switchMode('HOME')"><span>🏠</span>Home</div><div class="nav-btn"><span>✉</span>Msg</div><div class="nav-btn"><span>✥</span>Full</div><div class="nav-btn enter-btn-blue" onclick="confirmXpdr()"><span>↩</span>Enter</div>`;
-        }
-
-        updateHeaderUI();
-    }
-
-    // --- Render Helpers ---
-    function renderAudioRow(label, id) {
-        let isMicOn = (micSelected === label);
-        let freqBoxHTML = id === 'uvhf' 
-            ? `<div></div>` 
-            : `<div class="freq-display-box" onclick="switchMode('COM_INPUT', '${id}')">
-                <div style="color:white; font-size:10px; font-weight:bold;">${freqs[id].act}</div>
-                <div style="color:var(--text-cyan); font-size:8px;">${freqs[id].stb}</div>
-               </div>`;
-
-        return `<div class="volume-row">
-            <div class="item-btn ${monStates[id]?'on':''}" onclick="toggleMon('${id}')">${label}<div class="status-line"></div></div>
-            <div class="item-btn ${isMicOn?'on':''}" onclick="setMic('${label}')">MIC<div class="status-line"></div></div>
-            <div class="wedge-slider" onpointerdown="handleVol('${id}', event)">
-                <span class="wedge-text">${volumes[id]}%</span>
-                <div class="wedge-fill" style="width:${volumes[id]}%"></div>
-            </div>
-            ${freqBoxHTML}
-        </div>`;
-    }
-
-    function renderNavRow(label, id) {
-        return `<div style="display: grid; grid-template-columns: 60px 1fr 80px; align-items: center; margin-bottom: 7px; gap: 6px;">
-            <div class="item-btn ${monStates[id]?'on':''}" onclick="toggleMon('${id}')">${label}<div class="status-line"></div></div>
-            <div class="wedge-slider" onpointerdown="handleVol('${id}', event)">
-                <span class="wedge-text">${volumes[id]}%</span>
-                <div class="wedge-fill" style="width:${volumes[id]}%"></div>
-            </div>
-            <div class="freq-display-box" style="align-items:center; padding:0; justify-content:center; cursor:pointer;" onclick="switchMode('COM_INPUT', '${id}')">
-                <div style="display:flex; gap:4px; font-size:12px; font-weight:bold; margin-bottom:2px;">
-                    <span style="color:var(--text-green);">${freqs[id].act}</span>
-                    <span style="color:white;">${freqs[id].id}</span>
-                </div>
-                <div style="color:var(--text-cyan); font-size:12px; font-weight:bold;">${freqs[id].stb}</div>
-            </div>
-        </div>`;
-    }
-
-    function renderMissionRow(label, id) {
-        let isMicOn = (micSelected === label);
-        let rightBox = '';
-        
-        if (id === 'vhffm') {
-            rightBox = `<div style="background:black; border:0.7px solid #444; border-radius:4px; height:35px;"></div>`;
-        } else if (id === 'hf') {
-            rightBox = `<div class="freq-display-box" style="align-items:flex-start; justify-content:center; padding:2px 6px; cursor:pointer;" onclick="switchMode('HF_CONTROL')">
-                            <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                                <div style="color:white; font-size:14px; font-weight:bold;">${freqs.hf.act}</div>
-                                <div style="color:var(--text-cyan); font-size:8px; font-weight:bold; margin-top:2px;">${hfState.sql}</div>
-                            </div>
-                            <div style="color:var(--text-cyan); font-size:8px; font-weight:bold; text-align:left; margin-top:2px;">${hfState.emission}</div>
-                        </div>`;
-        }
-        
-        return `<div class="volume-row" style="margin-bottom:0;">
-            <div class="item-btn ${monStates[id]?'on':''}" onclick="toggleMon('${id}')">${label}<div class="status-line"></div></div>
-            <div class="item-btn ${isMicOn?'on':''}" onclick="setMic('${label}')">MIC<div class="status-line"></div></div>
-            <div class="wedge-slider" onpointerdown="handleVol('${id}', event)">
-                <span class="wedge-text">${volumes[id]}%</span>
-                <div class="wedge-fill" style="width:${volumes[id]}%"></div>
-            </div>
-            ${rightBox}
-        </div>`;
-    }
-
-    // --- Control Logics ---
-    function toggleHfTuning() { hfState.tuning = hfState.tuning === 'Simplex' ? 'Duplex' : 'Simplex'; renderContent(); }
-    function toggleHfEmission() {
-        const modes = ['LSB V', 'USB V', 'AM'];
-        hfState.emission = modes[(modes.indexOf(hfState.emission) + 1) % modes.length]; renderContent();
-    }
-    function toggleHfSql() {
-        const sqls = ['SQ0', 'SQ1', 'SQ2', 'SQ3'];
-        hfState.sql = sqls[(sqls.indexOf(hfState.sql) + 1) % sqls.length]; renderContent();
-    }
-    function toggleHfPwr() {
-        const pwrs = ['Low', 'Mid', 'High'];
-        hfState.pwr = pwrs[(pwrs.indexOf(hfState.pwr) + 1) % pwrs.length]; renderContent();
-    }
-
-    function setXpdrMode(m) { xpdrState.mode = m; renderContent(); }
-    function toggleAdsb() { xpdrState.adsb = !xpdrState.adsb; renderContent(); }
-    
-    // XPDR Input
-    function addXpdrInput(num) {
-        if (!hasStartedTyping) { xpdrInput = num; hasStartedTyping = true; }
-        else if (xpdrInput.length < 4) { xpdrInput += num; }
-        renderContent();
-    }
-    function backspaceXpdr() {
-        if (!hasStartedTyping) { hasStartedTyping = true; }
-        xpdrInput = xpdrInput.slice(0, -1); renderContent();
-    }
-    function setXpdrPreset(code) { xpdrInput = code; hasStartedTyping = true; renderContent(); }
-    function flashIdent() { renderContent(); }
-    function confirmXpdr() {
-        if(hasStartedTyping && xpdrInput.length === 4) { xpdrState.code = xpdrInput; }
-        switchMode('XPDR_MODE');
-    }
-
-    function toggleIsolate() {
-        icStates.Isolate = !icStates.Isolate;
-        if (icStates.Isolate) {
-            icStates.CoPilot = true; icStates.Pilot = true;
-            icStates.Crew1 = false; icStates.Pass = false; icStates.Crew2 = false; icStates.wICS = false;
-            icStates.Loop1 = false; icStates.Loop2 = false; icStates.Loop5 = false;
-        }
-        renderContent();
-    }
-
-    function toggleIC(name) { 
-        icStates[name] = !icStates[name]; 
-        if (name === 'Loop1' && icStates.Loop1) { icStates.Crew1 = true; icStates.Crew2 = true; icStates.Isolate = false; } 
-        else if (name === 'Loop2' && icStates.Loop2) { icStates.Pass = true; icStates.Isolate = false; } 
-        else if (name === 'Loop5' && icStates.Loop5) {
-            icStates.CoPilot = true; icStates.Pilot = true; icStates.Crew1 = true;
-            icStates.Pass = true; icStates.Crew2 = true; icStates.wICS = true;
-            icStates.Isolate = false;
-        }
-        if (['Crew1', 'Pass', 'Crew2', 'wICS'].includes(name) && icStates[name]) { icStates.Isolate = false; }
-        renderContent(); 
-    }
-
-    function setMic(label) { 
-        if (micSelected === label) { micSelected = 'OFF'; } else { micSelected = label; }
-        renderContent(); 
-    }
-    function toggleMon(id) { monStates[id] = !monStates[id]; renderContent(); }
-
-    function updateHeaderUI() {
-        const topMic = document.getElementById('top-mic-val');
-        if(topMic) {
-            if (micSelected === 'OFF' || !micSelected) { topMic.innerText = ''; } 
-            else { topMic.innerText = micSelected; }
-        }
-        
-        let monArr = [];
-        if(monStates.com1) monArr.push("1"); 
-        if(monStates.com2) monArr.push("2"); 
-        if(monStates.uvhf) monArr.push("M");
-        let monText = monArr.length ? monArr.join('/') : 'OFF';
-        if(monStates.vhffm && audioTab === 'Mission') { monText = "VHF-FM"; }
-
-        const topMon = document.getElementById('top-mon-val');
-        if(topMon) topMon.innerText = monText;
-
-        if(document.getElementById('h-com1-act')){
-            document.getElementById('h-com1-act').innerText = freqs.com1.act;
-            document.getElementById('h-com1-stb').innerText = freqs.com1.stb;
-            document.getElementById('h-com2-act').innerText = freqs.com2.act;
-            document.getElementById('h-com2-stb').innerText = freqs.com2.stb;
-        }
-
-        const xpdrModeElem = document.getElementById('top-xpdr-mode');
-        if(xpdrModeElem) {
-            let shortMode = xpdrState.mode.toUpperCase();
-            if(shortMode === 'ALTITUDE REPORTING') shortMode = 'ALT';
-            if(shortMode === 'TA ONLY') shortMode = 'TA';
-            xpdrModeElem.innerText = shortMode;
-        }
-        const xpdrCodeElem = document.getElementById('top-xpdr-code');
-        if(xpdrCodeElem) xpdrCodeElem.innerText = xpdrState.code;
-    }
-
-    function handleVol(id, e) {
-        const s = e.currentTarget;
-        s.setPointerCapture(e.pointerId);
-        const update = (pe) => {
-            const r = s.getBoundingClientRect();
-            volumes[id] = Math.round(Math.max(0, Math.min(100, (pe.clientX - r.left) / r.width * 100)));
-            s.querySelector('.wedge-fill').style.width = volumes[id] + '%';
-            if(s.querySelector('.wedge-text')) s.querySelector('.wedge-text').innerText = volumes[id] + '%';
-        };
-        update(e); s.onpointermove = update; s.onpointerup = () => s.onpointermove = null;
-    }
-
-    function swapFreq(id) { 
-        if(!freqs[id]) return;
-        [freqs[id].act, freqs[id].stb] = [freqs[id].stb, freqs[id].act];
-        renderContent();
-    }
-
-    // --- FREQ Input Logic ---
-    function addInput(num) {
-        if (!hasStartedTyping) {
-            currentInput = num;
-            hasStartedTyping = true;
-        } else if (currentInput.length < 7) {
-            currentInput += num;
-        }
-        renderContent();
-    }
-
-    function backspaceInput() {
-        if (!hasStartedTyping) {
-            hasStartedTyping = true;
-        }
-        currentInput = currentInput.slice(0, -1);
-        renderContent();
-    }
-
-    function saveInputAndReturn() {
-        if (hasStartedTyping && currentInput.length >= 3) {
-            let v = currentInput;
-            if (inputTarget === 'hf') {
-                if (!v.includes('.') && v.length > 2) v = v.slice(0, 2) + "." + v.slice(2);
-            } else {
-                if (!v.includes('.') && v.length > 3) v = v.slice(0, 3) + "." + v.slice(3);
-            }
-            freqs[inputTarget].stb = v;
-        }
-        let backMode = inputTarget === 'hf' ? 'HF_CONTROL' : 'AUDIO';
-        switchMode(backMode, inputTarget);
-    }
-
-    function handleInputXfer() {
-        saveInputAndReturn();
-        swapFreq(inputTarget);
-    }
-
-    function confirmInput() { 
-        saveInputAndReturn();
-    }
-
-    window.onload = () => switchMode('HOME'); 
-</script>
 </body>
 </html>
