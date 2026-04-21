@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KUH-1CG CDU - Advanced PERF & External Links</title>
+    <title>KUH-1CG CDU - Advanced PERF & Navigation Links</title>
     <style>
         :root {
             --bg-dark: #050505;
@@ -329,7 +329,7 @@
             perfResults.mta30 = "N/A"; perfResults.mta10 = "N/A"; perfResults.mta25 = "N/A";
         }
 
-        // 2. OGE 
+        // 2. OGE
         let oAltIdx = Math.max(0, Math.min(6, cAlt / 1000));
         let oTempIdx = Math.max(0, Math.min(9, (cTemp - (-10)) / 5));
 
@@ -420,14 +420,16 @@
             
             let gridHtml = `<div class="home-grid">`;
             homeButtons.forEach(btn => {
-                if (btn.id === 'weather' || btn.id === 'charts') {
-                    // a 태그를 이용한 외부 링크 적용 (팝업 차단 방지 및 새창 열기)
-                    let linkUrl = btn.id === 'weather' 
-                        ? "https://customwidgethosting.web.app/embed.html?ffCompiledSrc=https%3A%2F%2Fstorage.googleapis.com%2Fflutterflow-io-6f20.appspot.com%2Fbuild_outputs%2Fintegrated-flight-preparation-assistant-mlvjyo%2Fweb%2FQMZqWepPgY9jqDmcO2Uu%2Fmain.dart.js"
-                        : "https://aim.koca.go.kr/eaipPub/Package/history-en-GB.html?language=ko_KR";
-                    
+                // 외부 링크 연동 리스트 (Weather, Charts, Flight Plan)
+                const links = {
+                    'weather': "https://customwidgethosting.web.app/embed.html?ffCompiledSrc=https%3A%2F%2Fstorage.googleapis.com%2Fflutterflow-io-6f20.appspot.com%2Fbuild_outputs%2Fintegrated-flight-preparation-assistant-mlvjyo%2Fweb%2FQMZqWepPgY9jqDmcO2Uu%2Fmain.dart.js",
+                    'charts': "https://aim.koca.go.kr/eaipPub/Package/history-en-GB.html?language=ko_KR",
+                    'fpl': "https://thdenfl-source.github.io/Locus/"
+                };
+
+                if (links[btn.id]) {
                     gridHtml += `
-                        <a href="${linkUrl}" target="_blank" class="home-icon-wrapper" style="text-decoration:none; color:inherit;">
+                        <a href="${links[btn.id]}" target="_blank" class="home-icon-wrapper" style="text-decoration:none; color:inherit;">
                             <div class="icon-box">${btn.icon}</div>
                             <div class="icon-label">${btn.text}</div>
                         </a>`;
@@ -816,8 +818,8 @@
                     </div>
                     <div style="display:flex; gap:10px; width:100%; justify-content:center; margin-top:10px;">
                         <div class="item-btn" style="flex:1; height:35px; font-size:10px;" onclick="flashIdent()">IDENT</div>
-                        <div class="item-btn" style="flex:1; height:35px; font-size:10px;" onclick="setXpdrPreset('1200')">VFR</div>
-                        <div class="item-btn" style="flex:1; height:35px; font-size:10px;" onclick="setXpdrPreset('7700')">EMER</div>
+                        <div class="item-btn" style="width: 45px; height: 35px; font-size: 10px;">VFR</div>
+                        <div class="item-btn" style="width: 45px; height: 35px; font-size: 10px;">EMER</div>
                     </div>
                 </div>
             `;
@@ -919,8 +921,6 @@
         if (!hasStartedTyping) { hasStartedTyping = true; }
         xpdrInput = xpdrInput.slice(0, -1); renderContent();
     }
-    function setXpdrPreset(code) { xpdrInput = code; hasStartedTyping = true; renderContent(); }
-    function flashIdent() { renderContent(); }
     function confirmXpdr() {
         if(hasStartedTyping && xpdrInput.length === 4) { xpdrState.code = xpdrInput; }
         switchMode('XPDR_MODE');
@@ -1059,23 +1059,6 @@
 
     function confirmInput() { 
         saveInputAndReturn();
-    }
-
-    // 초기 화면 크기 자동 조절 연동
-    window.addEventListener('resize', adjustScale);
-    function adjustScale() {
-        const frame = document.querySelector('.cdu-frame');
-        const screenWidth = window.innerWidth;
-        const baseWidth = 370; 
-        
-        let targetScale = 1.37;
-        let maxWidth = screenWidth * 0.92; 
-        
-        if (baseWidth * targetScale > maxWidth) {
-            targetScale = maxWidth / baseWidth;
-        }
-        
-        frame.style.transform = `scale(${targetScale})`;
     }
 
     window.onload = () => {
