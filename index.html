@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KUH-1CG CDU - Advanced PERF & Weather Link</title>
+    <title>KUH-1CG CDU - Advanced PERF & External Links</title>
     <style>
         :root {
             --bg-dark: #050505;
@@ -420,11 +420,14 @@
             
             let gridHtml = `<div class="home-grid">`;
             homeButtons.forEach(btn => {
-                if (btn.id === 'weather') {
-                    // a 태그를 이용한 확실한 링크 방식 적용 (팝업 차단 방지 및 새창 열기)
-                    let weatherLink = "https://customwidgethosting.web.app/embed.html?ffCompiledSrc=https%3A%2F%2Fstorage.googleapis.com%2Fflutterflow-io-6f20.appspot.com%2Fbuild_outputs%2Fintegrated-flight-preparation-assistant-mlvjyo%2Fweb%2FQMZqWepPgY9jqDmcO2Uu%2Fmain.dart.js";
+                if (btn.id === 'weather' || btn.id === 'charts') {
+                    // a 태그를 이용한 외부 링크 적용 (팝업 차단 방지 및 새창 열기)
+                    let linkUrl = btn.id === 'weather' 
+                        ? "https://customwidgethosting.web.app/embed.html?ffCompiledSrc=https%3A%2F%2Fstorage.googleapis.com%2Fflutterflow-io-6f20.appspot.com%2Fbuild_outputs%2Fintegrated-flight-preparation-assistant-mlvjyo%2Fweb%2FQMZqWepPgY9jqDmcO2Uu%2Fmain.dart.js"
+                        : "https://aim.koca.go.kr/eaipPub/Package/history-en-GB.html?language=ko_KR";
+                    
                     gridHtml += `
-                        <a href="${weatherLink}" target="_blank" class="home-icon-wrapper" style="text-decoration:none; color:inherit;">
+                        <a href="${linkUrl}" target="_blank" class="home-icon-wrapper" style="text-decoration:none; color:inherit;">
                             <div class="icon-box">${btn.icon}</div>
                             <div class="icon-label">${btn.text}</div>
                         </a>`;
