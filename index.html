@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KUH-1CG CDU - Advanced PERF & Navigation Links</title>
+    <title>KUH-1CG CDU - Active Functions Highlight</title>
     <style>
         :root {
             --bg-dark: #050505;
@@ -48,6 +48,24 @@
         .freq-stby { color: var(--text-cyan); font-size: 10px; font-weight: bold; }
         .swap-arrow { font-size: 10px; color: #777; cursor: pointer; padding: 2px; z-index: 10;}
         .green-ind { color: var(--text-green); font-size: 8px; font-weight: bold; text-align: center; line-height: 1.1; }
+
+        /* --- 기능 활성화 버튼 시각적 강조 스타일 --- */
+        .func-active {
+            background: linear-gradient(to bottom, rgba(135, 206, 235, 0.25) 0%, #444 40%, #1a1a1a 100%) !important;
+            border-top: 1px solid rgba(135, 206, 235, 0.6) !important;
+            transition: background 0.1s ease;
+        }
+        .func-active:active {
+            background: linear-gradient(to bottom, rgba(135, 206, 235, 0.4) 0%, #555 40%, #222 100%) !important;
+        }
+        .top-func-btn {
+            background: linear-gradient(to bottom, rgba(135, 206, 235, 0.2) 0%, transparent 80%);
+            transition: background 0.1s ease;
+        }
+        .top-func-btn:active {
+            background: rgba(135, 206, 235, 0.35);
+        }
+        /* ------------------------------------- */
 
         /* Titles and Sub-headers */
         .mode-title-bar { background: linear-gradient(to bottom, #555, #111);
@@ -94,6 +112,7 @@
         .freq-box-main { width: 120px; height: 40px; background: #000; border: 1.5px solid #555; border-radius: 4px; color: var(--text-green); font-size: 22px; display: flex; align-items: center; justify-content: center; font-family: monospace; }
         .numpad-grid { display: grid; grid-template-columns: repeat(3, 60px); gap: 10px; justify-content: center; }
         .xpdr-numpad-grid { display: grid; grid-template-columns: repeat(4, 55px); gap: 10px; justify-content: center; margin-bottom: 15px;}
+        .selcal-grid { display: grid; grid-template-columns: repeat(5, 45px); gap: 8px; justify-content: center; }
         .num-circle { width: 50px; height: 50px; background: radial-gradient(circle at 30% 30%, #444, #111); border: 0.7px solid #555; border-radius: 50%; color: white; font-size: 18px; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 3px 5px rgba(0,0,0,0.6); }
 
         /* Footer */
@@ -126,11 +145,11 @@
         
         <div class="header-grid">
             <div class="header-box" style="padding:0; gap:0;">
-                <div style="flex:1; width:100%; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="switchMode('AUDIO'); switchAudioTab('COM');">
+                <div class="top-func-btn" style="flex:1; width:100%; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="switchMode('AUDIO'); switchAudioTab('COM');">
                     <div class="header-label" style="line-height:1.2;">Audio &<br>Radios</div>
                 </div>
                 <div style="width:80%; height:1px; background:#333;"></div>
-                <div style="flex:1; width:100%; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="switchMode('INTERCOM')">
+                <div class="top-func-btn" style="flex:1; width:100%; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="switchMode('INTERCOM')">
                     <div class="header-label">Intercom</div>
                 </div>
             </div>
@@ -204,14 +223,22 @@
     let inputTarget = 'com1';
     let currentInput = "";
     let xpdrInput = "";
+    
+    // SELCAL State
+    let selcalCode = "BCAJ";
+    let selcalInput = "";
+    
     let hasStartedTyping = false; 
     
     let micSelected = 'COM1'; 
     let monStates = { com1: true, com2: true, uvhf: false, vhffm: true, hf: false, selcal: false, nav1: true, nav2: true, speaker: true };
     let clicksState = 'Off'; 
     let icStates = { CoPilot: true, Pilot: true, Crew1: true, Pass: true, Crew2: true, wICS: true, Isolate: false, Loop1: false, Loop2: false, Loop5: false };
+    
+    // VOX State (Off, Manual, Auto)
     let voxState = 'Off';
-    let volumes = { com1: 100, com2: 75, uvhf: 90, pb: 100, intercom: 100, vhffm: 100, hf: 100, clicks: 100, nav1: 100, nav2: 100, speaker: 100 };
+
+    let volumes = { com1: 100, com2: 75, uvhf: 90, pb: 100, intercom: 100, vhffm: 100, hf: 100, clicks: 100, nav1: 100, nav2: 100, speaker: 100, vox: 50 };
     
     let freqs = { 
         com1: { act: "124.380", stb: "129.990" }, com2: { act: "119.340", stb: "132.110" }, 
@@ -329,7 +356,7 @@
             perfResults.mta30 = "N/A"; perfResults.mta10 = "N/A"; perfResults.mta25 = "N/A";
         }
 
-        // 2. OGE
+        // 2. OGE 
         let oAltIdx = Math.max(0, Math.min(6, cAlt / 1000));
         let oTempIdx = Math.max(0, Math.min(9, (cTemp - (-10)) / 5));
 
@@ -360,7 +387,7 @@
         perfResults.ige_gonogo = getIGEfromOGE(oge19k).toFixed(1);
     }
 
-    // --- High-fidelity SVG Icons for Home Screen ---
+    // --- High-fidelity SVG Icons ---
     const homeButtons = [
         { id: 'map', text: 'Map<br>Settings', icon: '<svg viewBox="0 0 100 100"><rect x="15" y="25" width="70" height="50" fill="#4caf50" rx="3"/><path d="M30 75 L50 25 L70 75" fill="#81c784"/><circle cx="50" cy="50" r="15" fill="none" stroke="#fff" stroke-width="4"/><line x1="20" y1="20" x2="45" y2="45" stroke="#ccc" stroke-width="8" stroke-linecap="round"/></svg>' },
         { id: 'traffic', text: 'Traffic', icon: '<svg viewBox="0 0 100 100"><polygon points="30,30 40,50 20,50" fill="#0ff"/><polygon points="70,50 80,70 60,70" fill="#fff"/><line x1="30" y1="20" x2="30" y2="10" stroke="#0ff" stroke-width="4"/><polygon points="25,15 30,5 35,15" fill="#0ff"/><line x1="70" y1="80" x2="70" y2="90" stroke="#fff" stroke-width="4"/><polygon points="65,85 70,95 75,85" fill="#fff"/></svg>' },
@@ -392,6 +419,9 @@
         } else if (mode === 'XPDR_CODE') {
             xpdrInput = xpdrState.code;
             hasStartedTyping = false;
+        } else if (mode === 'SELCAL_INPUT') {
+            selcalInput = selcalCode;
+            hasStartedTyping = false;
         }
         
         renderContent();
@@ -404,6 +434,11 @@
 
     function toggleClicks() {
         clicksState = clicksState === 'Off' ? 'On' : 'Off';
+        renderContent();
+    }
+
+    function setVoxMode(mode) {
+        voxState = mode;
         renderContent();
     }
 
@@ -420,24 +455,27 @@
             
             let gridHtml = `<div class="home-grid">`;
             homeButtons.forEach(btn => {
-                // 외부 링크 연동 리스트 (Weather, Charts, Flight Plan)
                 const links = {
                     'weather': "https://customwidgethosting.web.app/embed.html?ffCompiledSrc=https%3A%2F%2Fstorage.googleapis.com%2Fflutterflow-io-6f20.appspot.com%2Fbuild_outputs%2Fintegrated-flight-preparation-assistant-mlvjyo%2Fweb%2FQMZqWepPgY9jqDmcO2Uu%2Fmain.dart.js",
                     'charts': "https://aim.koca.go.kr/eaipPub/Package/history-en-GB.html?language=ko_KR",
-                    'fpl': "https://thdenfl-source.github.io/Locus/"
+                    'fpl': "https://thdenfl-source.github.io/Locus/",
+                    'serv': "https://thdenfl.tistory.com"
                 };
+
+                let isActiveBtn = ['weather', 'charts', 'fpl', 'serv', 'sys', 'perf'].includes(btn.id);
+                let boxClass = isActiveBtn ? 'icon-box func-active' : 'icon-box';
 
                 if (links[btn.id]) {
                     gridHtml += `
                         <a href="${links[btn.id]}" target="_blank" class="home-icon-wrapper" style="text-decoration:none; color:inherit;">
-                            <div class="icon-box">${btn.icon}</div>
+                            <div class="${boxClass}">${btn.icon}</div>
                             <div class="icon-label">${btn.text}</div>
                         </a>`;
                 } else {
                     let clickAction = btn.id === 'sys' ? `onclick="switchMode('AUDIO'); switchAudioTab('COM');"` : (btn.id === 'perf' ? `onclick="switchMode('PERF')"` : '');
                     gridHtml += `
                         <div class="home-icon-wrapper" ${clickAction}>
-                            <div class="icon-box">${btn.icon}</div>
+                            <div class="${boxClass}">${btn.icon}</div>
                             <div class="icon-label">${btn.text}</div>
                         </div>`;
                 }
@@ -608,9 +646,9 @@
                         <div class="item-btn ${monStates.selcal?'on':''}" onclick="toggleMon('selcal')">SELCAL<div class="status-line"></div></div>
                         <div></div>
                         <div></div>
-                        <div class="freq-display-box" style="align-items:center; justify-content:center;">
+                        <div class="freq-display-box" style="align-items:center; justify-content:center;" onclick="switchMode('SELCAL_INPUT')">
                             <div style="color:white; font-size:7px; margin-bottom:2px;">SELCAL ID</div>
-                            <div style="color:var(--text-cyan); font-size:11px; font-weight:bold;">BCAJ</div>
+                            <div style="color:var(--text-cyan); font-size:11px; font-weight:bold;">${selcalCode}</div>
                         </div>
                     </div>
                 `;
@@ -620,7 +658,6 @@
                     <div style="display:flex; justify-content:space-between; font-size:7px; color:#ccc; margin-bottom:4px; padding: 0 50px 0 130px;">
                         <span>Volume</span><span>Control</span>
                     </div>
-                    
                     <div style="display: flex; gap: 8px; margin-bottom: 8px; padding-left: 5px;">
                         <div class="item-btn" style="width: 65px; height: 35px;" onclick="toggleClicks()">
                             <span style="font-size: 9px; color: white;">Clicks</span>
@@ -631,7 +668,6 @@
                             <div class="wedge-fill" style="width:${volumes.clicks}%"></div>
                         </div>
                     </div>
-
                     <div style="display: flex; gap: 8px; padding-left: 5px;">
                         <div class="item-btn ${micSelected === 'PA' ? 'on' : ''}" style="width: 65px; height: 35px;" onclick="setMic('PA')">
                             <span style="font-size: 9px;">PA</span>
@@ -668,7 +704,7 @@
                         <div class="wedge-fill" style="width:${volumes.intercom}%"></div>
                     </div>
                     <div class="item-btn ${icStates.Isolate?'on':''}" style="width:45px; height:37px;" onclick="toggleIsolate()">Isolate<div class="status-line"></div></div>
-                    <div class="item-btn" style="width:40px; height:37px;">VOX<br><span style="color:var(--text-cyan)">${voxState}</span></div>
+                    <div class="item-btn" style="width:40px; height:37px;" onclick="switchMode('VOX_MODE')">VOX<br><span style="color:var(--text-cyan)">${voxState.toUpperCase()}</span></div>
                 </div>
                 <div class="panel-border" style="padding-top:12px;">
                     <div class="intercom-grid">
@@ -686,6 +722,63 @@
                     </div>
                 </div>`;
             footer.innerHTML = `<div class="nav-btn" onclick="switchMode('HOME')"><span>↩</span>Back</div><div class="nav-btn" onclick="switchMode('HOME')"><span>🏠</span>Home</div><div class="nav-btn"><span>✉</span>Msg</div><div class="nav-btn"><span>✥</span>Half</div>`;
+        }
+        else if (currentMode === 'SELCAL_INPUT') {
+            title.innerText = "COM SELCAL";
+            centerLabel.innerText = "Data Entry";
+            
+            let displayVal = !hasStartedTyping ? selcalCode : selcalInput.padEnd(4, '_');
+
+            container.innerHTML = `
+                <div style="display:flex; flex-direction:column; align-items:center; padding-top:10px; height:100%;">
+                    <div style="text-align:center; color:white; font-size:10px; font-weight:bold; margin-bottom:5px;">SELCAL ID</div>
+                    <div class="input-row" style="margin-top:0; margin-bottom: 15px;">
+                        <div class="freq-box-main" style="width:140px; letter-spacing: 8px; font-size: 24px;">${displayVal}</div>
+                    </div>
+                    <div class="selcal-grid">
+                        ${['A','B','C','D','E', 'F','G','H','J','K', 'L','M','P','Q','R'].map(c => 
+                            `<div class="num-circle" style="width:45px; height:45px; font-size:16px;" onclick="addSelcalInput('${c}')">${c}</div>`
+                        ).join('')}
+                        <div class="item-btn" style="width:45px; height:45px;">🔍<br>Find</div>
+                        <div style="visibility:hidden"></div>
+                        <div class="num-circle" style="width:45px; height:45px; font-size:16px;" onclick="addSelcalInput('S')">S</div>
+                        <div style="visibility:hidden"></div>
+                        <div class="item-btn" style="width:45px; height:45px;" onclick="backspaceSelcal()">⬅<br>Bksp</div>
+                    </div>
+                </div>
+            `;
+            footer.innerHTML = `<div class="nav-btn" onclick="switchMode('AUDIO'); switchAudioTab('Mission');"><span>↩</span>Cancel</div><div class="nav-btn" onclick="switchMode('HOME')"><span>🏠</span>Home</div><div class="nav-btn"><span>✉</span>Msg</div><div class="nav-btn"><span>✥</span>Full</div><div class="nav-btn enter-btn-blue" onclick="confirmSelcal()"><span>↩</span>Enter</div>`;
+        }
+        else if (currentMode === 'VOX_MODE') {
+            title.innerText = "Intercom";
+            centerLabel.innerText = "VOX Mode Selection";
+
+            let isManual = (voxState === 'Manual');
+            let sliderOpacity = isManual ? '1' : '0.3';
+            let pointerEvents = isManual ? 'auto' : 'none';
+
+            container.innerHTML = `
+                <div style="display:flex; flex-direction:column; align-items:center; padding-top:20px; height:100%; width:100%;">
+                    <div style="color:white; font-size:12px; font-weight:bold; margin-bottom:15px; border-bottom:1px solid #555; width:90%; text-align:center; padding-bottom:5px;">ICS VOX MODE</div>
+                    
+                    <div style="display:flex; gap:10px; width:90%; justify-content:center; margin-bottom:25px;">
+                        ${['Off', 'Manual', 'Auto'].map(m => 
+                            `<div class="item-btn ${voxState === m ? 'on' : ''}" style="flex:1; height:45px; font-size:12px; font-weight:bold;" onclick="setVoxMode('${m}')">
+                                ${m.toUpperCase()}<div class="status-line"></div>
+                            </div>`
+                        ).join('')}
+                    </div>
+
+                    <div style="width:90%; opacity:${sliderOpacity}; pointer-events:${pointerEvents}; transition: opacity 0.3s ease;">
+                        <div style="font-size:9px; color:#ccc; margin-bottom:5px; text-align:left;">VOX SENSITIVITY (MANUAL)</div>
+                        <div class="wedge-slider" style="height:35px; border:1px solid #555; border-radius:4px; margin-bottom:10px;" onpointerdown="handleVol('vox', event)">
+                            <span class="wedge-text" style="font-size:12px; top:11px;">${volumes.vox}%</span>
+                            <div class="wedge-fill" style="width:${volumes.vox}%"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            footer.innerHTML = `<div class="nav-btn" onclick="switchMode('INTERCOM')"><span>↩</span>Back</div><div class="nav-btn" onclick="switchMode('HOME')"><span>🏠</span>Home</div><div class="nav-btn"><span>✉</span>Msg</div><div class="nav-btn"><span>✥</span>Half</div>`;
         }
         else if (currentMode === 'HF_CONTROL') {
             title.innerText = "HF";
@@ -818,8 +911,8 @@
                     </div>
                     <div style="display:flex; gap:10px; width:100%; justify-content:center; margin-top:10px;">
                         <div class="item-btn" style="flex:1; height:35px; font-size:10px;" onclick="flashIdent()">IDENT</div>
-                        <div class="item-btn" style="width: 45px; height: 35px; font-size: 10px;">VFR</div>
-                        <div class="item-btn" style="width: 45px; height: 35px; font-size: 10px;">EMER</div>
+                        <div class="item-btn" style="flex:1; height:35px; font-size:10px;" onclick="setXpdrPreset('1200')">VFR</div>
+                        <div class="item-btn" style="flex:1; height:35px; font-size:10px;" onclick="setXpdrPreset('7700')">EMER</div>
                     </div>
                 </div>
             `;
@@ -921,6 +1014,8 @@
         if (!hasStartedTyping) { hasStartedTyping = true; }
         xpdrInput = xpdrInput.slice(0, -1); renderContent();
     }
+    function setXpdrPreset(code) { xpdrInput = code; hasStartedTyping = true; renderContent(); }
+    function flashIdent() { renderContent(); }
     function confirmXpdr() {
         if(hasStartedTyping && xpdrInput.length === 4) { xpdrState.code = xpdrInput; }
         switchMode('XPDR_MODE');
@@ -1038,6 +1133,39 @@
         switchMode('PERF');
     }
 
+    // --- SELCAL Input Logic ---
+    function addSelcalInput(char) {
+        if (!hasStartedTyping) {
+            selcalInput = "";
+            hasStartedTyping = true;
+        }
+        if (selcalInput.length >= 4) return;
+        if (selcalInput.includes(char)) return; 
+
+        if (selcalInput.length === 1 && char <= selcalInput[0]) return;
+        if (selcalInput.length === 3 && char <= selcalInput[2]) return;
+
+        selcalInput += char;
+        renderContent();
+    }
+
+    function backspaceSelcal() {
+        if (!hasStartedTyping) {
+            hasStartedTyping = true;
+            selcalInput = selcalCode;
+        }
+        selcalInput = selcalInput.slice(0, -1);
+        renderContent();
+    }
+
+    function confirmSelcal() {
+        if (hasStartedTyping && selcalInput.length === 4) {
+            selcalCode = selcalInput;
+        }
+        switchMode('AUDIO');
+        switchAudioTab('Mission');
+    }
+
     function saveInputAndReturn() {
         if (hasStartedTyping && currentInput.length >= 3) {
             let v = currentInput;
@@ -1059,6 +1187,23 @@
 
     function confirmInput() { 
         saveInputAndReturn();
+    }
+
+    // 초기 화면 크기 자동 조절 연동
+    window.addEventListener('resize', adjustScale);
+    function adjustScale() {
+        const frame = document.querySelector('.cdu-frame');
+        const screenWidth = window.innerWidth;
+        const baseWidth = 370; 
+        
+        let targetScale = 1.37;
+        let maxWidth = screenWidth * 0.92; 
+        
+        if (baseWidth * targetScale > maxWidth) {
+            targetScale = maxWidth / baseWidth;
+        }
+        
+        frame.style.transform = `scale(${targetScale})`;
     }
 
     window.onload = () => {
